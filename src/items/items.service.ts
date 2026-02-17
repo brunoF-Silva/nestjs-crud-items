@@ -5,7 +5,7 @@ import { PrismaService } from 'src/database/prisma.service';
 
 @Injectable()
 export class ItemsService {
-  private readonly MAX_ITEMS = 5;
+  private readonly MAX_ITEMS = 36;
   constructor(private prisma: PrismaService) {}
 
   // async create(createItemDto: CreateItemDto) {
