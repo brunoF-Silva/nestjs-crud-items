@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/database/prisma.service';
@@ -8,9 +8,18 @@ import { hash } from "bcryptjs";
 
 @Injectable()
 export class UsersService {
+  private readonly MAX_USERS = 36;
   constructor(private prisma: PrismaService){}
 
   async create(createUserDto: CreateUserDto) {
+    const userCount = await this.prisma.user.count();
+    
+    if (userCount >= this.MAX_USERS) {
+      throw new BadRequestException([
+        `Maximum limit of ${this.MAX_USERS} users reached. Cannot create more users.`
+      ]);
+    }
+
     const encryptedPassword = await hash(createUserDto.password, 10);
 
     const userCreated = this.prisma.user.create({

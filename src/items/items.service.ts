@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { PrismaService } from 'src/database/prisma.service';
 
 @Injectable()
 export class ItemsService {
+  private readonly MAX_ITEMS = 36;
   constructor(private prisma: PrismaService) {}
 
   // async create(createItemDto: CreateItemDto) {
@@ -20,6 +21,14 @@ export class ItemsService {
   // }
 
   async create(createItemDto: CreateItemDto) {
+    const itemCount = await this.prisma.item.count();
+    
+    if (itemCount >= this.MAX_ITEMS) {
+      throw new BadRequestException([
+        `Maximum limit of ${this.MAX_ITEMS} items reached. Cannot create more items.`
+      ]);
+    }
+
     const { userId, ...itemData } = createItemDto;
 
     const itemCreated = await this.prisma.item.create({
