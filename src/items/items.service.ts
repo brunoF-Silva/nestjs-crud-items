@@ -6,7 +6,42 @@ import { PrismaService } from 'src/database/prisma.service';
 @Injectable()
 export class ItemsService {
   private readonly MAX_ITEMS = 36;
+  private readonly ALLOWED_IMAGE_HOSTS: string[] = (
+    process.env.ALLOWED_IMAGE_HOSTS || 'images.unsplash.com'
+  )
+    .split(',')
+    .map((host) => host.trim().toLowerCase());
+
+  private readonly FORBIDDEN_IMAGE_HOSTS: string[] = (
+    process.env.FORBIDDEN_IMAGE_HOSTS || 'plus.unsplash.com'
+  )
+    .split(',')
+    .map((host) => host.trim().toLowerCase());
+
   constructor(private prisma: PrismaService) {}
+
+  private isAllowedImageUrl(imageUrl: string): boolean {
+    if (!imageUrl) return false;
+    if (!imageUrl.startsWith('http')) return true; // Allow relative paths
+
+    try {
+      const url = new URL(imageUrl);
+      const hostname = url.hostname.toLowerCase();
+
+      // Check if explicitly forbidden
+      if (this.FORBIDDEN_IMAGE_HOSTS.some((forbidden) => hostname.includes(forbidden))) {
+        throw new BadRequestException([
+          `Image host '${hostname}' is explicitly forbidden. Allowed sources URLs begin with '${this.ALLOWED_IMAGE_HOSTS.join(', ')}'.`
+        ]);
+      }
+
+      // Check if allowed
+      return this.ALLOWED_IMAGE_HOSTS.some((allowed) => hostname.includes(allowed));
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      return false;
+    }
+  }
 
   // async create(createItemDto: CreateItemDto) {
   //   // 1. Added 'await'
@@ -27,6 +62,24 @@ export class ItemsService {
       throw new BadRequestException([
         `Maximum limit of ${this.MAX_ITEMS} items reached. Cannot create more items.`
       ]);
+    }
+
+    // Validate image URL
+    if (createItemDto.image) {
+      try {
+        if (!this.isAllowedImageUrl(createItemDto.image)) {
+          throw new BadRequestException([
+            `Image host not allowed. You can only use free pictures from unsplash.com (their URLs begin with '${this.ALLOWED_IMAGE_HOSTS.join(', ')}').`
+          ]);
+        }
+      } catch (error) {
+        if (error instanceof BadRequestException) {
+          throw error;
+        }
+        throw new BadRequestException([
+          `Invalid image URL format.`
+        ]);
+      }
     }
 
     const { userId, ...itemData } = createItemDto;
