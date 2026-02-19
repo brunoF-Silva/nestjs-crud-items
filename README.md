@@ -37,7 +37,7 @@ A robust REST API built with NestJS for managing items and users, featuring secu
 1. **Clone the repository**
    ```bash
    git clone https://github.com/brunoF-Silva/nestjs-crud-items.git
-   cd crud-items-api
+   cd nestjs-crud-items
    ```
 
 2. **Install dependencies**
