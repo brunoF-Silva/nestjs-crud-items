@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config'; // 1. Importe o ConfigModule
+import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
+import { DemoResetModule } from './demo-reset/demo-reset.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -10,12 +12,15 @@ import { PrismaService } from 'src/database/prisma.service'
 
 @Module({
   imports: [
-      ConfigModule.forRoot({
-        isGlobal: true, // <-- Isso torna o .env disponível globalmente
-  }),
-  ItemsModule,
-  UsersModule],
-  
+    ScheduleModule.forRoot(), // This enables the @Cron decorators to work
+    DemoResetModule,
+    ConfigModule.forRoot({
+      isGlobal: true, // This makes the .env file globally available
+    }),
+    ItemsModule,
+    UsersModule,
+  ],
+
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })
